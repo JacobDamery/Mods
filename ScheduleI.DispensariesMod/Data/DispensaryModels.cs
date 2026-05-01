@@ -2,68 +2,103 @@ using System;
 using System.Collections.Generic;
 using ScheduleI.DispensariesMod.Integration;
 
-namespace ScheduleI.DispensariesMod.Data;
-
-public sealed record DispensaryPropertyTemplate(
-    string Name,
-    string Location,
-    decimal PurchasePrice,
-    decimal OperatingCostPerDay,
-    int StorageCapacity,
-    int EmployeeSlots,
-    int DisplaySlots,
-    float LocationDemandModifier)
+namespace ScheduleI.DispensariesMod.Data
 {
-    public string Id { get; } = Name.Replace(" ", "_").ToLowerInvariant();
-}
+    public class DispensaryPropertyTemplate
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Location { get; set; }
+        public decimal PurchasePrice { get; set; }
+        public decimal OperatingCostPerDay { get; set; }
+        public int StorageCapacity { get; set; }
+        public int EmployeeSlots { get; set; }
+        public int DisplaySlots { get; set; }
+        public float LocationDemandModifier { get; set; }
 
-public sealed class DispensaryProperty
-{
-    public required string Id { get; init; }
-    public required string Name { get; set; }
-    public required string Location { get; init; }
-    public required decimal PurchasePrice { get; init; }
-    public required decimal OperatingCostPerDay { get; init; }
-    public required int StorageCapacity { get; init; }
-    public required int EmployeeSlots { get; init; }
-    public required int DisplaySlots { get; init; }
-    public required float LocationDemandModifier { get; init; }
+        public DispensaryPropertyTemplate()
+        {
+            Id = string.Empty;
+            Name = string.Empty;
+            Location = string.Empty;
+        }
 
-    public DispensaryInventory Inventory { get; } = new();
-    public List<string> AssignedEmployeeIds { get; } = new();
-    public List<DispensaryDailyReport> Reports { get; } = new();
-}
+        public DispensaryPropertyTemplate(string name, string location, decimal purchasePrice, decimal operatingCostPerDay, int storageCapacity, int employeeSlots, int displaySlots, float locationDemandModifier)
+        {
+            Name = name;
+            Location = location;
+            PurchasePrice = purchasePrice;
+            OperatingCostPerDay = operatingCostPerDay;
+            StorageCapacity = storageCapacity;
+            EmployeeSlots = employeeSlots;
+            DisplaySlots = displaySlots;
+            LocationDemandModifier = locationDemandModifier;
+            Id = name.Replace(" ", "_").ToLowerInvariant();
+        }
+    }
 
-public sealed class DispensaryInventory
-{
-    public List<DispensaryListing> Listings { get; } = new();
-}
+    public class DispensaryProperty
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Location { get; set; }
+        public decimal PurchasePrice { get; set; }
+        public decimal OperatingCostPerDay { get; set; }
+        public int StorageCapacity { get; set; }
+        public int EmployeeSlots { get; set; }
+        public int DisplaySlots { get; set; }
+        public float LocationDemandModifier { get; set; }
+        public DispensaryInventory Inventory { get; set; }
+        public List<string> AssignedEmployeeIds { get; set; }
+        public List<DispensaryDailyReport> Reports { get; set; }
 
-public sealed class DispensaryListing
-{
-    public required string ProductId { get; init; }
-    public required string ProductName { get; init; }
-    public required ProductGrade Grade { get; init; }
-    public required int Quantity { get; set; }
-    public required decimal SalePrice { get; set; }
-    public required float DemandModifier { get; set; }
-}
+        public DispensaryProperty()
+        {
+            Id = string.Empty;
+            Name = string.Empty;
+            Location = string.Empty;
+            Inventory = new DispensaryInventory();
+            AssignedEmployeeIds = new List<string>();
+            Reports = new List<DispensaryDailyReport>();
+        }
+    }
 
-public sealed class DispensaryEmployee
-{
-    public required string Id { get; init; }
-    public required string Name { get; init; }
-    public required decimal WagePerDay { get; init; }
-    public required float SalesSkill { get; init; }
-    public required float Reliability { get; init; }
-    public required float CustomerService { get; init; }
-}
+    public class DispensaryInventory
+    {
+        public List<DispensaryListing> Listings { get; set; }
+        public DispensaryInventory() { Listings = new List<DispensaryListing>(); }
+    }
 
-public sealed class DispensaryDailyReport
-{
-    public required DateTime DayUtc { get; init; }
-    public required decimal Revenue { get; init; }
-    public required decimal OperatingCosts { get; init; }
-    public required decimal Wages { get; init; }
-    public decimal Profit => Revenue - OperatingCosts - Wages;
+    public class DispensaryListing
+    {
+        public string ProductId { get; set; }
+        public string ProductName { get; set; }
+        public ProductGrade Grade { get; set; }
+        public int Quantity { get; set; }
+        public decimal SalePrice { get; set; }
+        public float DemandModifier { get; set; }
+
+        public DispensaryListing() { ProductId = string.Empty; ProductName = string.Empty; }
+    }
+
+    public class DispensaryEmployee
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public decimal WagePerDay { get; set; }
+        public float SalesSkill { get; set; }
+        public float Reliability { get; set; }
+        public float CustomerService { get; set; }
+
+        public DispensaryEmployee() { Id = string.Empty; Name = string.Empty; }
+    }
+
+    public class DispensaryDailyReport
+    {
+        public DateTime DayUtc { get; set; }
+        public decimal Revenue { get; set; }
+        public decimal OperatingCosts { get; set; }
+        public decimal Wages { get; set; }
+        public decimal Profit { get { return Revenue - OperatingCosts - Wages; } }
+    }
 }

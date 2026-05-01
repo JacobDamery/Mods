@@ -3,7 +3,8 @@ using System.Linq;
 using ScheduleI.DispensariesMod.Data;
 using ScheduleI.DispensariesMod.Integration;
 
-namespace ScheduleI.DispensariesMod.Systems;
+namespace ScheduleI.DispensariesMod.Systems
+{
 
 public sealed class DispensaryEconomySystem
 {
@@ -66,6 +67,9 @@ public sealed class DispensaryEconomySystem
             }
 
             _gameApi.Player.Cash += report.Profit;
+            _gameApi.Log.Info($"Dispensary daily tick completed: {dispensary.Id}, revenue={report.Revenue}, profit={report.Profit}");
         }
     }
+}
+
 }

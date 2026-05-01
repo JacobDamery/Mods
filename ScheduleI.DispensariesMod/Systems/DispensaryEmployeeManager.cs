@@ -4,7 +4,8 @@ using System.Linq;
 using ScheduleI.DispensariesMod.Data;
 using ScheduleI.DispensariesMod.Integration;
 
-namespace ScheduleI.DispensariesMod.Systems;
+namespace ScheduleI.DispensariesMod.Systems
+{
 
 public sealed class DispensaryEmployeeManager
 {
@@ -77,4 +78,6 @@ public sealed class DispensaryEmployeeManager
         var avgSkill = people.Average(p => (p.SalesSkill + p.CustomerService + p.Reliability) / 3f);
         return 0.5f + avgSkill;
     }
+}
+
 }
