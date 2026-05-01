@@ -21,18 +21,10 @@ namespace ScheduleI.DispensariesMod
                 delegate (string msg) { LoggerInstance.Warning(msg); },
                 delegate (string msg, System.Exception ex) { LoggerInstance.Error(msg + (ex == null ? string.Empty : " :: " + ex)); });
 
-            _plugin = new DispensariesModPlugin(gameApi, true);
+            _plugin = new DispensariesModPlugin(gameApi, false);
             _plugin.Initialize();
 
             LoggerInstance.Msg("Schedule I Dispensaries Mod initialized.");
-        }
-
-        public override void OnUpdate()
-        {
-            if (_plugin != null)
-            {
-                _plugin.OnUpdate();
-            }
         }
     }
 }

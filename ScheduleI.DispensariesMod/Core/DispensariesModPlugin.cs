@@ -35,7 +35,6 @@ public sealed class DispensariesModPlugin
     {
         _gameApi.Log.Info("DispensariesMod: initializing");
         _gameApi.Diagnostics.DumpStatus();
-        _gameApi.Runtime.DumpIl2CppTypeCandidates();
 
         RegisterDispensaryCatalog();
         WireProgressionUnlock();
@@ -112,26 +111,6 @@ public sealed class DispensariesModPlugin
             () => SaveData.ToJson(),
             json => SaveData.LoadFromJson(json));
     }
-
-
-        public void OnUpdate()
-        {
-            if (!_debugMode) return;
-
-            if (_gameApi.Runtime.IsHotkeyPressed("F9"))
-            {
-                _gameApi.Runtime.ShowMayorLegalizationMessage();
-            }
-
-            if (_gameApi.Runtime.IsHotkeyPressed("F8"))
-            {
-                SaveData.CannabisLegalized = true;
-                if (_gameApi.Player.IsAvailable) _gameApi.Player.Cash += 1000000m;
-                PurchaseFailReason reason;
-                var ok = DispensaryManager.TryPurchaseDispensary("test_leaf", SaveData.CannabisLegalized, out reason);
-                _gameApi.Log.Info("F8 debug purchase result=" + ok + " reason=" + reason);
-            }
-        }
 
     private void ApplyDebugShortcuts()
     {
