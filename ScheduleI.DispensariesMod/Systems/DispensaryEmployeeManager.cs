@@ -66,7 +66,7 @@ public sealed class DispensaryEmployeeManager
 
         var people = dispensary.AssignedEmployeeIds
             .Select(id => _saveData.EmployeePool.TryGetValue(id, out var employee) ? employee : null)
-            .Where(e => e is not null)
+            .Where(e => e != null)
             .Cast<DispensaryEmployee>()
             .ToList();
 
