@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>8.0</LangVersion>
+    <AssemblyName>ScheduleI.DispensariesMod</AssemblyName>
+    <RootNamespace>ScheduleI.DispensariesMod</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Update this path if your Schedule I install is in a different location. -->
+    <Reference Include="MelonLoader" Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Schedule I\MelonLoader\net6\MelonLoader.dll')">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Schedule I\MelonLoader\net6\MelonLoader.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
