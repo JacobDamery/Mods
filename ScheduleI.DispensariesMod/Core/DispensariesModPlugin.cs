@@ -7,12 +7,10 @@ using ScheduleI.DispensariesMod.UI;
 
 namespace ScheduleI.DispensariesMod.Core;
 
-/// <summary>
-/// Entry point for the dispensary gameplay expansion. Hook this into your mod loader initialization.
-/// </summary>
 public sealed class DispensariesModPlugin
 {
     private readonly IGameApi _gameApi;
+    private readonly bool _debugMode;
 
     public DispensaryManager DispensaryManager { get; }
     public DispensaryEmployeeManager EmployeeManager { get; }
@@ -20,9 +18,10 @@ public sealed class DispensariesModPlugin
     public DispensarySaveData SaveData { get; }
     public DispensaryUiController UiController { get; }
 
-    public DispensariesModPlugin(IGameApi gameApi)
+    public DispensariesModPlugin(IGameApi gameApi, bool debugMode = false)
     {
         _gameApi = gameApi;
+        _debugMode = debugMode;
         SaveData = new DispensarySaveData();
 
         EmployeeManager = new DispensaryEmployeeManager(_gameApi, SaveData);
@@ -33,33 +32,41 @@ public sealed class DispensariesModPlugin
 
     public void Initialize()
     {
+        _gameApi.Log.Info("DispensariesMod: initializing");
+        _gameApi.Diagnostics.DumpStatus();
+
         RegisterDispensaryCatalog();
         WireProgressionUnlock();
         WireRealEstateIntegration();
         WireSaveLoad();
+
+        if (_debugMode)
+        {
+            ApplyDebugShortcuts();
+        }
     }
 
     private void RegisterDispensaryCatalog()
     {
-        DispensaryManager.RegisterTemplate(new DispensaryPropertyTemplate("Downtown Leaf", "Downtown", 250000m, 4500m, 350, 5, 12, 1.25f));
-        DispensaryManager.RegisterTemplate(new DispensaryPropertyTemplate("Harbor Green", "Harbor District", 420000m, 6400m, 550, 8, 18, 1.45f));
-        DispensaryManager.RegisterTemplate(new DispensaryPropertyTemplate("Midtown Collective", "Midtown", 325000m, 5200m, 420, 6, 14, 1.32f));
+        // vertical slice: exactly one guaranteed test dispensary
+        DispensaryManager.RegisterTemplate(new DispensaryPropertyTemplate("Test Leaf", "Downtown", 150000m, 3500m, 200, 3, 8, 1.1f));
     }
 
     private void WireProgressionUnlock()
     {
         _gameApi.Events.OnDailyTick += () =>
         {
-            if (SaveData.CannabisLegalized)
-            {
-                return;
-            }
+            if (SaveData.CannabisLegalized) return;
 
-            if (_gameApi.Progression.TryGetFlag("MayorPubliclySmokingWeed", out var mayorSmokingFlag) && mayorSmokingFlag)
+            if (_gameApi.Progression.TryGetMayorWeedLegalizationFlag(out var flagName, out var unlocked) && unlocked)
             {
                 SaveData.CannabisLegalized = true;
                 _gameApi.Notifications.Show("Cannabis has been legalized. Dispensaries are now available to purchase.");
+                _gameApi.Log.Info($"DispensariesMod: legalization unlocked via flag {flagName}");
+                return;
             }
+
+            _gameApi.Log.Warn("DispensariesMod: legalization remains locked (no matching flag found). ");
         };
     }
 
@@ -67,10 +74,7 @@ public sealed class DispensariesModPlugin
     {
         _gameApi.RealEstate.RegisterDynamicListingProvider("dispensaries", () =>
         {
-            if (!SaveData.CannabisLegalized)
-            {
-                return Array.Empty<RealEstateListing>();
-            }
+            if (!SaveData.CannabisLegalized) return Array.Empty<RealEstateListing>();
 
             var listings = new List<RealEstateListing>();
             foreach (var template in DispensaryManager.GetAvailableTemplates())
@@ -78,18 +82,24 @@ public sealed class DispensariesModPlugin
                 listings.Add(new RealEstateListing(template.Id, template.Name, template.Location, template.PurchasePrice, "Dispensary"));
             }
 
+            _gameApi.Log.Info($"DispensariesMod: injected {listings.Count} dispensary listing(s)");
             return listings;
         });
 
         _gameApi.RealEstate.OnPurchaseRequested += listingId =>
         {
-            if (!SaveData.CannabisLegalized)
+            var purchased = DispensaryManager.TryPurchaseDispensary(listingId, SaveData.CannabisLegalized, out var reason);
+            if (!purchased)
             {
-                _gameApi.Notifications.Show("Dispensaries are not legal yet.");
-                return false;
+                _gameApi.Log.Warn($"DispensariesMod: purchase failed for {listingId}. Reason={reason}");
+            }
+            else
+            {
+                _gameApi.Log.Info($"DispensariesMod: purchase succeeded for {listingId}");
+                _gameApi.Ui.OpenDispensaryManagement(listingId);
             }
 
-            return DispensaryManager.TryPurchaseDispensary(listingId);
+            return purchased;
         };
     }
 
@@ -99,5 +109,18 @@ public sealed class DispensariesModPlugin
             "dispensaries_mod_state",
             () => SaveData.ToJson(),
             json => SaveData.LoadFromJson(json));
+    }
+
+    private void ApplyDebugShortcuts()
+    {
+        SaveData.CannabisLegalized = true;
+        if (_gameApi.Player.IsAvailable)
+        {
+            _gameApi.Player.Cash += 1_000_000m;
+        }
+
+        _gameApi.Inventory.TryAddDebugProduct("debug_og", "Debug OG", ProductGrade.High, 30, 85m);
+        _gameApi.Ui.RegisterMenu("dispensary.debug.open", () => _gameApi.Ui.OpenDispensaryManagement("test_leaf"));
+        _gameApi.Log.Info("DispensariesMod: debug shortcuts applied (legalization forced, cash granted, product added, direct panel open enabled)");
     }
 }

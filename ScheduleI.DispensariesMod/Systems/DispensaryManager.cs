@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using ScheduleI.DispensariesMod.Data;
@@ -23,15 +22,42 @@ public sealed class DispensaryManager
     public IReadOnlyList<DispensaryPropertyTemplate> GetAvailableTemplates()
         => _templates.Values.Where(t => !_saveData.OwnedDispensaries.ContainsKey(t.Id)).ToList();
 
-    public bool TryPurchaseDispensary(string templateId)
+    public bool TryPurchaseDispensary(string templateId, bool cannabisLegalized, out PurchaseFailReason failReason)
     {
-        if (!_templates.TryGetValue(templateId, out var template))
+        failReason = PurchaseFailReason.None;
+        if (!cannabisLegalized)
         {
+            failReason = PurchaseFailReason.LegalizationLocked;
             return false;
         }
 
-        if (_saveData.OwnedDispensaries.ContainsKey(template.Id) || _gameApi.Player.Cash < template.PurchasePrice)
+        if (!_templates.TryGetValue(templateId, out var template))
         {
+            failReason = PurchaseFailReason.ListingNotFound;
+            return false;
+        }
+
+        if (_saveData.OwnedDispensaries.ContainsKey(template.Id))
+        {
+            failReason = PurchaseFailReason.AlreadyOwned;
+            return false;
+        }
+
+        if (!_gameApi.Player.IsAvailable)
+        {
+            failReason = PurchaseFailReason.PlayerCashApiMissing;
+            return false;
+        }
+
+        if (_gameApi.Player.Cash < template.PurchasePrice)
+        {
+            failReason = PurchaseFailReason.InsufficientFunds;
+            return false;
+        }
+
+        if (!_gameApi.SaveSystem.IsAvailable)
+        {
+            failReason = PurchaseFailReason.SaveApiMissing;
             return false;
         }
 
@@ -55,26 +81,15 @@ public sealed class DispensaryManager
 
     public bool TryRename(string dispensaryId, string newName)
     {
-        if (!_saveData.OwnedDispensaries.TryGetValue(dispensaryId, out var dispensary))
-        {
-            return false;
-        }
-
+        if (!_saveData.OwnedDispensaries.TryGetValue(dispensaryId, out var dispensary)) return false;
         dispensary.Name = newName;
         return true;
     }
 
     public bool TryListProduct(string dispensaryId, PlayerProductStack stack, int quantity, decimal salePrice, float demandModifier)
     {
-        if (!_saveData.OwnedDispensaries.TryGetValue(dispensaryId, out var dispensary))
-        {
-            return false;
-        }
-
-        if (dispensary.Inventory.Listings.Count >= dispensary.DisplaySlots || !_gameApi.Inventory.TryRemove(stack.ProductId, quantity))
-        {
-            return false;
-        }
+        if (!_saveData.OwnedDispensaries.TryGetValue(dispensaryId, out var dispensary)) return false;
+        if (dispensary.Inventory.Listings.Count >= dispensary.DisplaySlots || !_gameApi.Inventory.TryRemove(stack.ProductId, quantity)) return false;
 
         dispensary.Inventory.Listings.Add(new DispensaryListing
         {

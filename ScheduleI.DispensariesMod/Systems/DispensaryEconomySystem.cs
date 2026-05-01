@@ -66,6 +66,7 @@ public sealed class DispensaryEconomySystem
             }
 
             _gameApi.Player.Cash += report.Profit;
+            _gameApi.Log.Info($"Dispensary daily tick completed: {dispensary.Id}, revenue={report.Revenue}, profit={report.Profit}");
         }
     }
 }
